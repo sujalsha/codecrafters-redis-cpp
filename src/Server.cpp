@@ -7,16 +7,28 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-using namespace std;
-
+#define BUFFER_SIZE 128
+void handle(int fd)
+{ 
+  char buff[BUFFER_SIZE] = "";
+  bzero(&buff,sizeof(buff));
+  while(1)
+  { 
+    memset(&buff,'\0',sizeof(buff));
+    recv(fd, buff, 15, 0);
+    if(strcasecmp(buff,"*1\r\n$4\r\nping\r\n") !=0 )
+    {  
+      bzero(&buff,sizeof(buff));
+      continue;
+    }
+    break;
+    send(fd, "+PONG\r\n",7, 0);
+  }
+  return ;
+}
 int main(int argc, char **argv) {
-  // Flush after every std::cout / std::cerr
-  std::cout << std::unitbuf;
-  std::cerr << std::unitbuf;
-
   // You can use print statements as follows for debugging, they'll be visible when running tests.
-  std::cout << "Logs from your program will appear here!\n";
-
+  // std::cout << "Logs from your program will appear here!\n";
   // Uncomment this block to pass the first stage
   //
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -24,7 +36,7 @@ int main(int argc, char **argv) {
    std::cerr << "Failed to create server socket\n";
    return 1;
   }
-  
+  //
   // Since the tester restarts your program quite often, setting SO_REUSEADDR
   // ensures that we don't run into 'Address already in use' errors
   int reuse = 1;
@@ -32,7 +44,7 @@ int main(int argc, char **argv) {
     std::cerr << "setsockopt failed\n";
     return 1;
   }
-  
+  //
   struct sockaddr_in server_addr;
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -54,12 +66,11 @@ int main(int argc, char **argv) {
   
   std::cout << "Waiting for a client to connect...\n";
   
-  //accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  send(client_fd, "+PONG\r\n", 7, 0);
+  int clientFd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
   std::cout << "Client connected\n";
   
+  handle(clientFd);
+  send(clientFd, "+PONG\r\n",7, 0);
   close(server_fd);
-
   return 0;
 }
